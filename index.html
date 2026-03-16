@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Receipt Vault → Dropbox</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #13131a;
+  --surface2: #1c1c28;
+  --border: #2a2a3d;
+  --accent: #5b6af5;
+  --accent2: #8f5bf5;
+  --green: #3effa0;
+  --red: #ff4f6a;
+  --blue: #0061ff;
+  --text: #e8e8f0;
+  --muted: #6b6b88;
+  --font-head: 'Syne', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(91,106,245,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(91,106,245,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+.glow { position: fixed; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(91,106,245,0.12) 0%, transparent 70%); top: -200px; right: -200px; pointer-events: none; z-index: 0; }
+.glow2 { position: fixed; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(0,97,255,0.08) 0%, transparent 70%); bottom: -100px; left: -100px; pointer-events: none; z-index: 0; }
+
+.container { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 48px 24px 80px; }
+
+header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 40px; flex-wrap: wrap; gap: 16px; }
+.logo h1 { font-family: var(--font-head); font-size: clamp(26px, 5vw, 40px); font-weight: 800; letter-spacing: -1px; background: linear-gradient(135deg, #fff 30%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; }
+.logo p { color: var(--muted); font-size: 11px; margin-top: 6px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.dropbox-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,97,255,0.12); border: 1px solid rgba(0,97,255,0.3); color: #6fa8ff; font-size: 11px; padding: 6px 12px; border-radius: 99px; }
+.dropbox-badge svg { width: 14px; height: 14px; fill: #6fa8ff; }
+
+/* Formula bar */
+.formula-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 20px; margin-bottom: 28px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.formula-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); white-space: nowrap; }
+.ftags { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.ft { font-family: var(--font-mono); font-size: 11px; padding: 3px 10px; border-radius: 4px; font-weight: 500; }
+.ft.b { background: rgba(91,106,245,0.15); color: #a0aaff; border: 1px solid rgba(91,106,245,0.3); }
+.ft.g { background: rgba(62,255,160,0.1); color: var(--green); border: 1px solid rgba(62,255,160,0.25); }
+.ft.p { background: rgba(143,91,245,0.15); color: #c4a0ff; border: 1px solid rgba(143,91,245,0.3); }
+.ft.o { background: rgba(255,180,60,0.12); color: #ffcc7a; border: 1px solid rgba(255,180,60,0.25); }
+.sep { color: var(--muted); }
+.formula-example { width: 100%; margin-top: 4px; font-size: 11px; color: var(--muted); }
+.formula-example span { color: #a0aaff; }
+
+/* Dropbox path bar */
+.path-bar { background: var(--surface); border: 1px solid rgba(0,97,255,0.25); border-radius: 10px; padding: 12px 18px; margin-bottom: 28px; display: flex; align-items: center; gap: 12px; }
+.path-icon { font-size: 18px; }
+.path-info { flex: 1; }
+.path-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.path-value { font-size: 13px; color: #6fa8ff; margin-top: 2px; }
+.path-status { font-size: 11px; color: var(--green); display: flex; align-items: center; gap: 6px; }
+.path-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+
+/* Drop zone */
+.drop-zone { border: 2px dashed var(--border); border-radius: 16px; padding: 48px 32px; text-align: center; cursor: pointer; transition: all 0.25s; background: var(--surface); position: relative; overflow: hidden; margin-bottom: 28px; }
+.drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); background: rgba(91,106,245,0.05); }
+.drop-icon { font-size: 40px; margin-bottom: 16px; display: block; }
+.drop-zone h2 { font-family: var(--font-head); font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.drop-zone p { color: var(--muted); font-size: 12px; line-height: 1.6; }
+.file-types { display: flex; gap: 8px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+.ftt { font-size: 10px; padding: 3px 10px; border-radius: 4px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+#file-input { display: none; }
+
+/* Queue */
+.queue-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.queue-header h3 { font-family: var(--font-head); font-size: 16px; font-weight: 700; }
+.qcount { font-size: 11px; color: var(--muted); background: var(--surface2); padding: 3px 10px; border-radius: 99px; border: 1px solid var(--border); }
+
+.receipt-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+
+.rc { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; display: grid; grid-template-columns: 32px 1fr auto; gap: 12px; align-items: center; position: relative; overflow: hidden; transition: border-color 0.2s; }
+.rc::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 2px 0 0 2px; background: var(--border); transition: background 0.3s; }
+.rc.processing { border-color: rgba(91,106,245,0.4); }
+.rc.processing::before { background: var(--accent); }
+.rc.renaming { border-color: rgba(255,180,60,0.4); }
+.rc.renaming::before { background: #ffcc7a; }
+.rc.uploading { border-color: rgba(0,97,255,0.4); }
+.rc.uploading::before { background: #6fa8ff; }
+.rc.done { border-color: rgba(62,255,160,0.3); }
+.rc.done::before { background: var(--green); }
+.rc.error { border-color: rgba(255,79,106,0.3); }
+.rc.error::before { background: var(--red); }
+
+.rc-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.rc-info { min-width: 0; }
+.rc-original { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+.rc-renamed { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rc-renamed.pending { color: var(--muted); font-style: italic; }
+.rc-renamed.success { color: var(--green); }
+.rc-renamed.uploading { color: #6fa8ff; }
+
+.rc-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+.sdot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.sdot.processing, .sdot.renaming { background: var(--accent); animation: pulse 1s infinite; }
+.sdot.uploading { background: #6fa8ff; animation: pulse 1s infinite; }
+.sdot.done { background: var(--green); }
+.sdot.error { background: var(--red); }
+.rm-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; transition: color 0.15s; }
+.rm-btn:hover { color: var(--red); }
+
+/* Progress */
+.prog-wrap { margin-bottom: 20px; display: none; }
+.prog-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+.prog-track { height: 4px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+.prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 99px; transition: width 0.4s; width: 0%; }
+
+/* Actions */
+.actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; border-radius: 8px; font-family: var(--font-mono); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none; white-space: nowrap; }
+.btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; }
+.btn-primary:hover { opacity: 0.85; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(91,106,245,0.3); }
+.btn-dropbox { background: rgba(0,97,255,0.15); border: 1px solid rgba(0,97,255,0.35); color: #6fa8ff; }
+.btn-dropbox:hover { background: rgba(0,97,255,0.25); transform: translateY(-1px); }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+/* Summary */
+.summary { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: none; }
+.summary h3 { font-family: var(--font-head); font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+.summary-grid { display: flex; flex-direction: column; gap: 8px; }
+.sum-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; font-size: 11px; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.sum-row:last-child { border-bottom: none; }
+.sum-orig { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sum-new { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; }
+.tag.ok { background: rgba(62,255,160,0.1); color: var(--green); border: 1px solid rgba(62,255,160,0.2); }
+.tag.err { background: rgba(255,79,106,0.1); color: var(--red); border: 1px solid rgba(255,79,106,0.2); }
+
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+@keyframes spin { to{transform:rotate(360deg)} }
+.spinner { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="glow2"></div>
+<div class="container">
+
+  <header>
+    <div class="logo">
+      <h1>Receipt Vault</h1>
+      <p>AI Rename → Auto Upload to Dropbox</p>
+    </div>
+    <div class="dropbox-badge">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 2L0 6l6 4-6 4 6 4 6-4-6-4 6-4L6 2zm12 0l-6 4 6 4-6 4 6 4 6-4-6-4 6-4-6-4zM6 16.5L12 20l6-3.5-6-4-6 4z"/></svg>
+      Connected to Dropbox
+    </div>
+  </header>
+
+  <!-- Formula -->
+  <div class="formula-bar">
+    <span class="formula-label">Naming Formula</span>
+    <div class="ftags">
+      <span class="ft b">Business</span><span class="sep">_</span>
+      <span class="ft g">Amount</span><span class="sep">_</span>
+      <span class="ft p">Currency</span><span class="sep">_</span>
+      <span class="ft o">Day</span><span class="sep">_</span>
+      <span class="ft o">Month</span><span class="sep">_</span>
+      <span class="ft o">Year</span>
+    </div>
+    <div class="formula-example">e.g. <span>Asado_Burgers_66.00_EUR_17_March_2024.jpg</span></div>
+  </div>
+
+  <!-- Dropbox path -->
+  <div class="path-bar">
+    <div class="path-icon">📦</div>
+    <div class="path-info">
+      <div class="path-label">Dropbox Destination</div>
+      <div class="path-value">/Receipts 2026/</div>
+    </div>
+    <div class="path-status">Ready</div>
+  </div>
+
+  <!-- Drop zone -->
+  <div class="drop-zone" id="drop-zone">
+    <span class="drop-icon">🧾</span>
+    <h2>Drop your receipts here</h2>
+    <p>AI reads each file, renames it, and uploads directly to your Dropbox.<br>Works with photos, scanned PDFs, and downloaded invoices.</p>
+    <div class="file-types">
+      <span class="ftt">JPG</span>
+      <span class="ftt">PNG</span>
+      <span class="ftt">WEBP</span>
+      <span class="ftt">PDF</span>
+      <span class="ftt">HEIC</span>
+    </div>
+    <input type="file" id="file-input" multiple accept="image/*,.pdf"/>
+  </div>
+
+  <!-- Queue -->
+  <div id="queue-section" style="display:none">
+    <div class="queue-header">
+      <h3>Receipt Queue</h3>
+      <span class="qcount" id="qcount">0 files</span>
+    </div>
+    <div class="receipt-list" id="receipt-list"></div>
+
+    <div class="prog-wrap" id="prog-wrap">
+      <div class="prog-labels">
+        <span id="prog-label">Processing…</span>
+        <span id="prog-pct">0%</span>
+      </div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="process-btn">✨ Process &amp; Upload to Dropbox</button>
+      <button class="btn btn-outline" id="clear-btn">Clear All</button>
+    </div>
+
+    <div class="summary" id="summary">
+      <h3>Upload Summary</h3>
+      <div class="summary-grid" id="summary-grid"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const DROPBOX_TOKEN = 'sl.u.AGXY6hODdpXL2bJP87wAmelGEM4tBXG4iJoj450TcMMnwgOWSQ1DvOaAU7Jn0B4tRb6XiNamJ5GaBzFiJDJr9vbPEnyB88ynDaQ7JioClGsdgMWyZA2FbRTQgRDsBRIxLUSqWtgQ70dawT9AOJbXxO-dY74hkNezAGrWby6S3vDmCTeMrBieYQanhV7cQ7G0NSkcrzzFJABykS5Pt2m-497rjxDLhmSURLBdeWf3rATHDNL8-t_EI7L3nd_vq5u8GjvS3ZTDytbMXZgSDJ-zwOtMMRMVL3cxkTPuRC513dn1BqaXTZYmQ32pXL6IrMJ6LsvGIzTiD1UKgVyJ9BRO1X9iyc0DuN8MslFpuu0g9Lo-FU-AKevuM9xc8yfGUujWtx9e1AUVAe2XqbPxd8f7nFdMLyjjuyDUGQOo9pHCYRbeB_XU7RkmqzA4KbnTQ8NKh7TzzSmCESes_IOx9JcTE8QWjHq7eQgaonHeEQAFk1jSih9m8r6bCIPcqSAN6RXYadu0OZp7mzI6lnz2WRtANmcvY-wQImFVGYYTT-9UKGTlDz-NIjp-m70xMmCSUHELfghAb3fs0jbAqNUMbJO8J5Ni2nHZNWQmyHdAlb0f2La__IJ8rQZKKgifUBPJLBg651IhrAG_IyVAqBGfKZGPyNv91LAZNcx5y36RH5ocSyO-EpqzW5m7RBVwRSn7CGeil9TegLuVSkO0_leMD2sYqSRq_j-7Uih7F9nfdBS-6Jsi3HM34nBpT8pJtDRrk-8JXfcgzy6FejWrV09SIz8MFAQZNBU6eX63PoisgHsLAgTZBPkl9zP0_4seJd0UpCYMbsc2ho4xvdQfFntxJ64F2bVXyngCd6aYkCeXKxs_wf8HIigdmQK6nc-Rd1iFyn7sS0zW4lmIIsTFQACA1Terpc-3DY-rxs8uQzhF3rzcM3yvzth5Wf7bUWrfxiClxn2cHOnflsiRwPLNrII-j0af_yVfjMWHsGNQG027RMRn5ous-BF6rujXxUTHvtz01z-LoXbU1mDvkm5pB6SlKu7YSma_bMTAGMKMl5W9IthDs6GM2ANqXr91Y6-nuNbthj4-fgemdH5g2-FMZBOJUffxo8Xn5sRLCzFPyAfCLmyXrPDA5UuiTAmcysVLE7GOT7F8PTBReWMyIAtJZUYV8e-NjsTdQi5bGDEI98rSCOb6oP-hk1aM5KDBoMzwLdLRPp-gWouJWtq4PKN55Md8KCx9PRNWE7Iga0HYh4QBBm_-OtRmPU6O5V3Kz3Zq-xmVWQgo0I2uizVOREY-s7uqk-cABgWh58MkCqRUUANfP2VRNnqcgJsW4W0Pp30nkEXeGlx0_jIM9If-mMzIGH2-tMNW0C3YvKPcUb2AntGZgnWWCuLFB3kbcs2THI1ExRIxRQr7Hq_3UJBujrmgytWFGd5DEK2L';
+const ANTHROPIC_KEY = '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';
+const DROPBOX_FOLDER = '/Receipts 2026';
+
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+const receiptList = document.getElementById('receipt-list');
+const queueSection = document.getElementById('queue-section');
+const qcount = document.getElementById('qcount');
+const processBtn = document.getElementById('process-btn');
+const clearBtn = document.getElementById('clear-btn');
+const progWrap = document.getElementById('prog-wrap');
+const progFill = document.getElementById('prog-fill');
+const progLabel = document.getElementById('prog-label');
+const progPct = document.getElementById('prog-pct');
+const summaryEl = document.getElementById('summary');
+const summaryGrid = document.getElementById('summary-grid');
+
+let receipts = [];
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); handleFiles([...e.dataTransfer.files]); });
+fileInput.addEventListener('change', () => handleFiles([...fileInput.files]));
+
+function handleFiles(files) {
+  const valid = files.filter(f => f.type.startsWith('image/') || f.type === 'application/pdf');
+  valid.forEach(file => {
+    receipts.push({ id: Date.now() + Math.random(), file, originalName: file.name, renamedName: null, status: 'pending', b64: null });
+  });
+  renderQueue();
+  if (valid.length) queueSection.style.display = 'block';
+}
+
+function getIcon(f) { return f.type === 'application/pdf' ? '📄' : '🖼️'; }
+
+function renderQueue() {
+  qcount.textContent = `${receipts.length} file${receipts.length !== 1 ? 's' : ''}`;
+  receiptList.innerHTML = '';
+  receipts.forEach(r => {
+    const card = document.createElement('div');
+    card.className = `rc ${r.status === 'pending' ? '' : r.status}`;
+    card.id = `rc-${r.id}`;
+
+    let statusText = '';
+    let statusClass = 'pending';
+    if (r.status === 'processing') { statusText = `<span class="rc-renamed pending"><span class="spinner"></span> Reading receipt…</span>`; statusClass = 'processing'; }
+    else if (r.status === 'renaming') { statusText = `<span class="rc-renamed pending"><span class="spinner"></span> Renaming…</span>`; statusClass = 'renaming'; }
+    else if (r.status === 'uploading') { statusText = `<span class="rc-renamed uploading"><span class="spinner"></span> Uploading to Dropbox…</span>`; statusClass = 'uploading'; }
+    else if (r.status === 'done') { statusText = `<span class="rc-renamed success">✓ ${r.renamedName}</span>`; statusClass = 'done'; }
+    else if (r.status === 'error') { statusText = `<span class="rc-renamed" style="color:var(--red)">⚠ ${r.errorMsg || 'Failed'}</span>`; statusClass = 'error'; }
+    else { statusText = `<span class="rc-renamed pending">Awaiting processing…</span>`; }
+
+    card.innerHTML = `
+      <div class="rc-icon">${getIcon(r.file)}</div>
+      <div class="rc-info">
+        <div class="rc-original">${r.originalName}</div>
+        ${statusText}
+      </div>
+      <div class="rc-right">
+        <div class="sdot ${statusClass}"></div>
+        ${r.status !== 'processing' && r.status !== 'uploading' ? `<button class="rm-btn" onclick="removeReceipt(${r.id})">✕</button>` : ''}
+      </div>`;
+    receiptList.appendChild(card);
+  });
+}
+
+function removeReceipt(id) {
+  receipts = receipts.filter(r => r.id !== id);
+  renderQueue();
+  if (!receipts.length) queueSection.style.display = 'none';
+}
+
+clearBtn.addEventListener('click', () => {
+  receipts = [];
+  renderQueue();
+  queueSection.style.display = 'none';
+  summaryEl.style.display = 'none';
+  fileInput.value = '';
+});
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = () => res(reader.result.split(',')[1]);
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function extractWithClaude(receipt) {
+  const file = receipt.file;
+  const isImage = file.type.startsWith('image/');
+  const b64 = receipt.b64;
+
+  const systemPrompt = `You are a receipt data extractor. Extract business name, amount, currency, and date.
+Respond ONLY with JSON, no markdown, no explanation:
+{"business":"BusinessName","amount":"66.00","currency":"EUR","day":"17","month":"March","year":"2024"}
+Rules:
+- business: vendor name, spaces→underscores, remove special chars
+- amount: total amount paid, 2 decimal places
+- currency: 3-letter ISO code (GBP, EUR, USD etc)
+- day: 2-digit day
+- month: full month name
+- year: 4-digit year
+- Unknown for anything unreadable`;
+
+  let messages;
+  if (isImage) {
+    messages = [{ role: 'user', content: [
+      { type: 'image', source: { type: 'base64', media_type: file.type, data: b64 } },
+      { type: 'text', text: 'Extract receipt data, respond only with JSON.' }
+    ]}];
+  } else {
+    // PDF - send as document
+    messages = [{ role: 'user', content: [
+      { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 } },
+      { type: 'text', text: 'Extract receipt data from this PDF, respond only with JSON.' }
+    ]}];
+  }
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system: systemPrompt, messages })
+  });
+
+  if (!resp.ok) throw new Error('Claude API error');
+  const data = await resp.json();
+  const text = data.content.map(c => c.text || '').join('').replace(/```json|```/g, '').trim();
+  const parsed = JSON.parse(text);
+  const ext = file.name.includes('.') ? '.' + file.name.split('.').pop().toLowerCase() : '';
+  return `${parsed.business}_${parsed.amount}_${parsed.currency}_${parsed.day}_${parsed.month}_${parsed.year}${ext}`;
+}
+
+async function uploadToDropbox(receipt) {
+  const path = `${DROPBOX_FOLDER}/${receipt.renamedName}`;
+  const binary = atob(receipt.b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+  const resp = await fetch('https://content.dropboxapi.com/2/files/upload', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${DROPBOX_TOKEN}`,
+      'Dropbox-API-Arg': JSON.stringify({ path, mode: 'add', autorename: true, mute: false }),
+      'Content-Type': 'application/octet-stream'
+    },
+    body: bytes
+  });
+
+  if (!resp.ok) {
+    const err = await resp.json();
+    throw new Error(err.error_summary || 'Dropbox upload failed');
+  }
+  return await resp.json();
+}
+
+function updateProgress(done, total, label) {
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  progFill.style.width = pct + '%';
+  progLabel.textContent = label;
+  progPct.textContent = pct + '%';
+}
+
+processBtn.addEventListener('click', async () => {
+  const pending = receipts.filter(r => r.status === 'pending' || r.status === 'error');
+  if (!pending.length) return;
+
+  processBtn.disabled = true;
+  processBtn.innerHTML = `<span class="spinner"></span> Processing…`;
+  progWrap.style.display = 'block';
+  summaryEl.style.display = 'none';
+
+  const total = pending.length;
+  let done = 0;
+
+  for (const r of pending) {
+    // Step 1: Read file
+    r.status = 'processing';
+    renderQueue();
+    updateProgress(done, total, `Reading ${r.originalName}…`);
+    try {
+      r.b64 = await fileToBase64(r.file);
+    } catch(e) {
+      r.status = 'error'; r.errorMsg = 'Could not read file';
+      done++; renderQueue(); continue;
+    }
+
+    // Step 2: Extract with Claude
+    r.status = 'renaming';
+    renderQueue();
+    updateProgress(done, total, `AI renaming ${r.originalName}…`);
+    try {
+      r.renamedName = await extractWithClaude(r);
+    } catch(e) {
+      r.status = 'error'; r.errorMsg = 'AI extraction failed';
+      done++; renderQueue(); continue;
+    }
+
+    // Step 3: Upload to Dropbox
+    r.status = 'uploading';
+    renderQueue();
+    updateProgress(done, total, `Uploading ${r.renamedName} to Dropbox…`);
+    try {
+      await uploadToDropbox(r);
+      r.status = 'done';
+    } catch(e) {
+      r.status = 'error'; r.errorMsg = e.message || 'Dropbox upload failed';
+    }
+
+    done++;
+    renderQueue();
+    updateProgress(done, total, done < total ? `Processing…` : `All done!`);
+  }
+
+  processBtn.disabled = false;
+  processBtn.innerHTML = `✨ Process &amp; Upload to Dropbox`;
+  progWrap.style.display = 'none';
+
+  // Show summary
+  summaryEl.style.display = 'block';
+  summaryGrid.innerHTML = '';
+  receipts.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'sum-row';
+    row.innerHTML = `
+      <div class="sum-orig">${r.originalName}</div>
+      <div class="sum-new">${r.renamedName || '—'}</div>
+      <span class="tag ${r.status === 'done' ? 'ok' : 'err'}">${r.status === 'done' ? '✓ Uploaded' : '✗ Failed'}</span>`;
+    summaryGrid.appendChild(row);
+  });
+});
+</script>
+</body>
+</html>
