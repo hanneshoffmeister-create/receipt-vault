@@ -13,7 +13,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-mono);min-hei
 header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:40px;flex-wrap:wrap;gap:16px}
 h1{font-family:var(--font-head);font-size:clamp(26px,5vw,40px);font-weight:800;letter-spacing:-1px;background:linear-gradient(135deg,#fff 30%,var(--accent) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .sub{color:var(--muted);font-size:11px;margin-top:6px;letter-spacing:.08em;text-transform:uppercase}
-.dbx-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(0,97,255,.12);border:1px solid rgba(0,97,255,.3);color:#6fa8ff;font-size:11px;padding:6px 12px;border-radius:99px}
+.dbx{display:inline-flex;align-items:center;gap:8px;background:rgba(0,97,255,.12);border:1px solid rgba(0,97,255,.3);color:#6fa8ff;font-size:11px;padding:6px 12px;border-radius:99px}
 .formula{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;margin-bottom:24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11px}
 .fl{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.1em}
 .ft{padding:3px 10px;border-radius:4px;font-weight:500}
@@ -40,12 +40,12 @@ h1{font-family:var(--font-head);font-size:clamp(26px,5vw,40px);font-weight:800;l
 .qh h3{font-family:var(--font-head);font-size:16px;font-weight:700}
 .qc{font-size:11px;color:var(--muted);background:var(--surface2);padding:3px 10px;border-radius:99px;border:1px solid var(--border)}
 .rlist{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
-.rc{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center;position:relative;overflow:hidden;transition:border-color .2s}
-.rc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:2px 0 0 2px;background:var(--border);transition:background .3s}
-.rc.renaming{border-color:rgba(255,180,60,.4)}.rc.renaming::before{background:#ffcc7a}
-.rc.uploading{border-color:rgba(0,97,255,.4)}.rc.uploading::before{background:#6fa8ff}
-.rc.done{border-color:rgba(62,255,160,.3)}.rc.done::before{background:var(--green)}
-.rc.error{border-color:rgba(255,79,106,.3)}.rc.error::before{background:var(--red)}
+.rc{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center;position:relative;overflow:hidden}
+.rc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--border)}
+.rc.renaming::before{background:#ffcc7a}
+.rc.uploading::before{background:#6fa8ff}
+.rc.done::before{background:var(--green)}
+.rc.error::before{background:var(--red)}
 .rico{width:32px;height:32px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 .rorig{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
 .rname{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -55,11 +55,10 @@ h1{font-family:var(--font-head);font-size:clamp(26px,5vw,40px);font-weight:800;l
 .rname.fail{color:var(--red)}
 .rright{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
-.dot.busy{background:var(--accent);animation:pulse 1s infinite}
-.dot.up{background:#6fa8ff;animation:pulse 1s infinite}
+.dot.busy,.dot.up{background:var(--accent);animation:pulse 1s infinite}
 .dot.ok{background:var(--green)}
 .dot.err{background:var(--red)}
-.rmbtn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;transition:color .15s}
+.rmbtn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px}
 .rmbtn:hover{color:var(--red)}
 .prog{margin-bottom:16px;display:none}
 .proglabels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:8px}
@@ -89,7 +88,7 @@ h1{font-family:var(--font-head);font-size:clamp(26px,5vw,40px);font-weight:800;l
 <div class="container">
 <header>
   <div><h1>Receipt Vault</h1><div class="sub">AI Rename → Auto Upload to Dropbox</div></div>
-  <div class="dbx-badge">&#x25A0; Connected to Dropbox</div>
+  <div class="dbx">&#x25A0; Connected to Dropbox</div>
 </header>
 <div class="formula">
   <span class="fl">Formula</span>
@@ -123,7 +122,8 @@ h1{font-family:var(--font-head);font-size:clamp(26px,5vw,40px);font-weight:800;l
 </div>
 <script>
 const DROPBOX_TOKEN='sl.u.AGW9vhllLWq2ImPHYvxp9wfV8_iE5kHtaR0oHX1vEVgbbiMyDs4nC-lFdPYVxsiyq6OWZlA4GUtbRSYT-kBMN1AJ8Xg0ZkqQy_I3oWaBGsMhG4aibqGuX7A-cyE0eZ5q1jRUKJ9uthdp6BbGbjcylsgKp6GMbAuKmmb7oQD8lrbEvrWSTic0hEtBaiaWRb_G415kyzvGt6TjNXZSsWJ8aX7DIVPO8_z0_Cg-6EvfPip0umtit8HRltxEclN5cfp0rHb193aNkpB1FhoAB24LPNzXAlKewF5bF7ukRPLQNcYnB8av6bJtKob5rWIK4yeXlXycA8o1m9wrcd1s8mTbarUGguJ7fnlHPpYm5NTVWE5w2dAFR1Ku6dGDIWLW61tKibk_03W52eBfKG4GdnD9vIK42yYoZC4d_EF_S9enB5Mf6rUd8ko65SH3u2tyiVhB50Olwn371QzUVYqEycaXmvXsBlCjIEkWtCBkjwuEtAKbl7DgvFoUq6pD5Uxjq-jgoBA9qn43iA5fpdVGqdWiqGItR3ZlGhkaU1uA0hvXix9bhWfddPsC_ebXeiL4xbqUIcqIZW9u3aVab99ckW-8VDw-Mklj65O_zAaX-a-BaYw5Bk843r3EWHKSD_kOP8sP80Qbga3y7RgAmKDal9_cQ6OprOVcW_uwwgjbPTti951UNDoP5Zrbisv2sw4Mr-5xU3SvIAROAHtemDbh5XemQvMzsKRhKS4BNi00r028XY0srxYdKVAtAO1nZotyp8OTnIDzYK-7gHbnen35Hq2rVuNGTJgL3m651_-rtgFKge-IX4KYvBZS8BbfrXfiDS37hW1KltRv4PI0xlTJWvZGWSc3RqgL0_HP6ZPNWwVEGZXipM_4vPsL7LROYh4CNa4rri2a9dr7RakiGq9afRvZ7WzObRScbEe6l-bThoOSkcjmNOTdEllsVLO-jJseug87jYBvsNgsiBrtjYV7QPyiLxlP62D9XnwzkGzBk7VY2HiJkub4bwaDV3dGAIurNY1OL8VujnOO25ABYLy76-uFFnUzI-9ngpNF9t3h5HWMYgbJ13ivfTFEcGDRgyQQntSbLX-PPB3sGNjHHV1ZIWqYQ7WHWq-ohUfLqBxWjT9xthwFuaOQ378uSJ7bHOsVHKfLSCJv6XrGPAaZP81CR87lk-wrCW20MsExkcQop1HeAr-g_-vwtB71TMrxstqHUkWkV24SIbbB1iOSl7au9tTVJIiiG5XmWA2NLWgeIpCXgdwFybu-eTyy9lsKU4KYCMAXVrCspo4Ce7qD3813vF0aHzbmHycK7sJ8WYulsUE4iJ5YrXM-z9m6NnepKcomj8gJ4p2bdBd2rX8XbJbJ5fGLkgwceVxt2d-PCWiIOoSqGJEWDDa4dD2VcxRmQd_DzrlO31D2E3ZT2-AQ3fa1x2EVX_Wq';
-const WEBHOOK='https://hook.eu1.make.com/bcq96fqqcv6bg7l5x637cwobi5kpxhwh';
+const ANTHROPIC_KEY='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';
+const PROXY='https://corsproxy.io/?url=';
 const FOLDER='/Receipts 2026';
 let receipts=[];
 const drop=document.getElementById('drop'),fi=document.getElementById('fi'),qsec=document.getElementById('qsec'),rlist=document.getElementById('rlist'),qc=document.getElementById('qc'),procbtn=document.getElementById('procbtn'),clrbtn=document.getElementById('clrbtn'),prog=document.getElementById('prog'),pfill=document.getElementById('pfill'),plbl=document.getElementById('plbl'),ppct=document.getElementById('ppct'),sumwrap=document.getElementById('sumwrap'),sumgrid=document.getElementById('sumgrid');
@@ -153,9 +153,19 @@ window.rm=id=>{receipts=receipts.filter(r=>r.id!==id);render();if(!receipts.leng
 clrbtn.onclick=()=>{receipts=[];render();qsec.style.display='none';sumwrap.style.display='none';fi.value=''};
 function b64(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result.split(',')[1]);fr.onerror=rej;fr.readAsDataURL(file)})}
 async function rename(r){
-  const res=await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:r.file.name,mimeType:r.file.type,data:r.b64})});
-  if(!res.ok)throw new Error('Webhook '+res.status);
-  const p=JSON.parse((await res.text()).replace(/```json|```/g,'').trim());
+  const isImg=r.file.type.startsWith('image/');
+  const content=isImg
+    ?[{type:'image',source:{type:'base64',media_type:r.file.type,data:r.b64}},{type:'text',text:'Extract receipt data, respond ONLY with JSON.'}]
+    :[{type:'document',source:{type:'base64',media_type:'application/pdf',data:r.b64}},{type:'text',text:'Extract receipt data, respond ONLY with JSON.'}];
+  const res=await fetch(PROXY+encodeURIComponent('https://api.anthropic.com/v1/messages'),{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01'},
+    body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:500,system:'Extract receipt data. Respond ONLY with this JSON, no other text: {"business":"Name","amount":"66.00","currency":"EUR","day":"17","month":"March","year":"2024"}. Rules: business=vendor name spaces→underscores; amount=total 2 decimals; currency=3-letter ISO; day=2-digit; month=full name; year=4-digit. Unknown if unreadable.',messages:[{role:'user',content}]})
+  });
+  if(!res.ok)throw new Error('API error '+res.status);
+  const data=await res.json();
+  const txt=data.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
+  const p=JSON.parse(txt);
   const ext=r.file.name.includes('.')?'.'+r.file.name.split('.').pop().toLowerCase():'';
   return `${p.business}_${p.amount}_${p.currency}_${p.day}_${p.month}_${p.year}${ext}`;
 }
